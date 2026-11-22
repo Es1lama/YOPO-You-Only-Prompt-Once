@@ -12,11 +12,11 @@ YOPO (You Only Prompt Once) — Stop babysitting coding agents. A multi-model pa
 
 ## 项目图片
 
-![第 1 页：0% 到 40% 后驳回](src/page-1-0-to-40-rejected.png)
+![第 1 页：0% 到 40% 后驳回](src/page-1-0-to-40-rejected.jpg)
 
-![第 2 页：40% 到 60% 的反馈与拆解](src/page-2-40-to-60-feedback.png)
+![第 2 页：40% 到 60% 的反馈与拆解](src/page-2-40-to-60-feedback.jpg)
 
-![第 3 页：100% 完成交付](src/page-3-100-complete.png)
+![第 3 页：100% 完成交付](src/page-3-100-complete.jpg)
 
 ## 为什么诞生这个项目（初心与总目标）
 

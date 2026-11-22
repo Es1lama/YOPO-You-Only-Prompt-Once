@@ -1,7 +1,10 @@
 # YOPO-You-Only-Prompt-Once
 YOPO (You Only Prompt Once) — Stop babysitting coding agents. A multi-model paradigm pairing a file-isolated supervisor with a capable worker via automated gap-loops and a Todo wall.
 
-# cross-steer（暂定名）
+# YOPO-You-Only-Prompt-Once
+发送一次指令，AI能够深度理解，精确理解，高完成率，不早停任务，不错误解读，不过度解读。
+发送一条指令，不用盯着屏幕当人肉辨别器，不用担心agent阳奉阴违。
+发送一条指令，让agent能够真正贯彻您的意志。
 
 > **项目状态：早期范式定义与路线验证阶段**  
 > 本项目探索的是一种**多模型协作开发范式**，而非绑定某一工具的固定脚本。底层接入方式保留多种路线开放讨论，**核心目标与系统边界不变**。

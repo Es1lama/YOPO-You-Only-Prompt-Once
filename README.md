@@ -18,6 +18,8 @@ YOPO (You Only Prompt Once) — Stop babysitting coding agents. A multi-model pa
 
 ![第 3 页：100% 完成交付](src/page-3-100-complete.jpg)
 
+参考来源：[AI Moe Atlas](https://github.com/SelinLee/ai-moe-atlas)
+
 ## 为什么诞生这个项目（初心与总目标）
 
 **总目标：让日常 AI 开发真正好用——至少做到指哪打哪，用着不烧心。**

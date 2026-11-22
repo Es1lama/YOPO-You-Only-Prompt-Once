@@ -9,6 +9,15 @@ YOPO (You Only Prompt Once) — Stop babysitting coding agents. A multi-model pa
 > **项目状态：早期范式定义与路线验证阶段**  
 > 本项目探索的是一种**多模型协作开发范式**，而非绑定某一工具的固定脚本。底层接入方式保留多种路线开放讨论，**核心目标与系统边界不变**。
 
+
+## 项目图片
+
+![第 1 页：0% 到 40% 后驳回](src/page-1-0-to-40-rejected.png)
+
+![第 2 页：40% 到 60% 的反馈与拆解](src/page-2-40-to-60-feedback.png)
+
+![第 3 页：100% 完成交付](src/page-3-100-complete.png)
+
 ## 为什么诞生这个项目（初心与总目标）
 
 **总目标：让日常 AI 开发真正好用——至少做到指哪打哪，用着不烧心。**

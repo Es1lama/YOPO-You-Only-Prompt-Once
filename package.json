@@ -1,0 +1,11 @@
+{
+  "name": "yo-po",
+  "version": "0.3.1",
+  "description": "Yo-po — You Only Prompt Once. Your chosen model reviews Codex against your original goal.",
+  "type": "module",
+  "private": true,
+  "license": "CC-BY-NC-4.0",
+  "engines": { "node": ">=22" },
+  "bin": { "yo-po": "./bin/yo-po.js", "review-loop": "./bin/review-loop.js" },
+  "scripts": { "start": "node bin/yo-po.js setup", "configure": "node bin/yo-po.js configure-api", "test": "node --test test/*.test.js", "demo": "node examples/demo.js" }
+}

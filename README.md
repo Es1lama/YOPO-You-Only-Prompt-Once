@@ -20,6 +20,76 @@ YOPO (You Only Prompt Once) — Stop babysitting coding agents. A multi-model pa
 
 参考来源：[AI Moe Atlas](https://github.com/SelinLee/ai-moe-atlas)
 
+## 0.3.1 安装与使用
+
+> 这是基于 Codex 原生 Hooks 的可运行实现。下方保留原有的设计说明与路线讨论。
+
+你在 Codex 里发任务，Codex 负责执行。Yo-po 把你的原始要求和本轮执行记录交给你选的模型审查。还有哪项没做到，审查模型就把缺项和下一轮的完整指令送回原聊天。当前项通过后，才开始下一项。
+
+## 第一次连接
+
+1. 准备 Node.js 22 或更新版本，以及已登录、支持 Hooks 的 Codex CLI。
+2. 解压项目，Windows 双击 **Yo-po.cmd** 打开设置窗口。选中说明文字后按 **Ctrl+C** 复制选中部分，或点 **复制页面文字** 复制当前页说明。在输入框可按 **Ctrl+V** 或点 **粘贴**。Windows、macOS 和 Linux 也可在终端运行 **`npm start`** 使用命令行向导。
+3. 向导会问 **“你的 API Key 是在哪个平台领的？”** 填平台名或编号。用其他平台或自己的服务器，直接粘贴它给的 **API 地址**。确认窗口显示的是你领密钥的服务地址。
+4. 看到 **【密钥输入】** 时粘贴密钥，按回车或点 **下一步**。密钥框会遮住字符，复制页面文字时只会复制说明。填你想用的**文字模型名**，或直接回车让 Yo-po 列出模型。Yo-po 会发一句测试消息，验证成功才保存。Windows 窗口里点 **更换接口** 可接着试另一个模型。
+5. 首次在 Codex CLI 输入 **`/hooks`**，信任标有 Yo-po 的四项，再重新打开 Codex。然后在你平常的 Codex 聊天里直接发任务。
+
+**以后直接打开 Codex 就行。** 同一用户、同一套 Codex 配置下，新项目、新聊天以及恢复旧聊天后的新轮次都共用已保存的接口。日常无需启动 Yo-po 或再进 `/hooks`。想换模型、密钥或服务商时，双击 **更换审查接口.cmd**，或运行 **`npm run configure`**。
+
+## 我手里的接口怎么填？
+
+安装向导内置 **29 个平台入口**。直接输入平台名或编号即可。例如：
+
+| 你的密钥来自 | 第一步怎么选 | 接下来怎么填 |
+| --- | --- | --- |
+| DeepSeek 官网、Google AI Studio | 分别选 **3**、**1** | 粘贴该平台的密钥，填模型名或回车选模型 |
+| 阿里云百炼、Kimi、智谱、MiniMax | 输入 `千问`、`Kimi`、`智谱` 或 `MiniMax` | 选领密钥的地域或站点，再填该站密钥 |
+| 火山方舟、腾讯云、百度千帆 | 输入 `豆包`、`混元` 或 `千帆` | 模型名以平台控制台为准 |
+| 硅基流动、OpenRouter 等聚合平台 | 输入 `硅基流动` 或 `OpenRouter` | 填这个平台给你的密钥，模型名保留平台要求的前缀 |
+| 其他中转平台、自己的模型服务 | 选 **0** 或直接粘贴 API 地址 | 填同一服务的密钥和模型名 |
+
+例如你在 OpenRouter 购买额度，想让 Claude 审查，就选 **OpenRouter**，再选它提供的 Claude 模型。执行任务沿用你的 Codex 登录。模型列表较长时可以翻页或用 `/关键词` 搜索。[完整平台清单、官方文档和地域选项](docs/providers.md)
+
+**给自建服务和中转用户**　普通 Base URL 按 Chat Completions 连接，例如 `https://example.com/v1`。如果服务文档给的是完整地址，可以原样粘贴以 `/chat/completions`、`/responses`、`/messages` 或 `/models/模型名:generateContent` 结尾的地址。Gemini 原生服务也可粘贴以 `/v1beta` 结尾的 Base URL。服务需要支持文字回复，并能按提示返回 JSON。模型列表不可用时仍可手填模型名。
+
+密钥保存在当前用户的电脑上。Windows 用当前用户的 DPAPI 加密，macOS 和 Linux 的配置文件权限为 `0600`。接口格式见 [Google Gemini](https://ai.google.dev/api/generate-content)、[OpenAI Responses](https://developers.openai.com/api/reference/resources/responses/methods/create)、[DeepSeek](https://api-docs.deepseek.com/) 和 [Anthropic Messages](https://platform.claude.com/docs/en/api/messages/create)。
+
+## 它在什么时候工作
+
+| Codex 事件 | Yo-po 的动作 |
+| --- | --- |
+| `UserPromptSubmit` | 按当前用户目标、必要的补充意见生成 TODO 和完整指令，返回原聊天 |
+| `PostToolUse` | 按会话和轮次收集工具名、可识别的执行状态、退出码、测试计数 |
+| `Stop` | 审查当前任务和证据，通过、打回或说明阻碍。需要继续时，Codex 在原聊天执行下一轮 |
+| `Interrupt` | 记录人为中断，丢弃已经失效的审查意见 |
+
+日常使用无需加前缀。明确要求“闭卷”“不联网”“不用外部模型”等会跳过该轮。要确定暂停整个敏感聊天，可以先发 **`Yo-po off`**，以后用 **`Yo-po on`** 恢复。自然语言检测采用本地规则，不能识别所有表达。
+
+原生模式仅使用 Codex 的事件，不读取和批量上传历史档案。任务文本、必要的补充意见和最多 3200 字符的回复摘录会发给审查端。常见密钥格式、邮箱、主目录用户名与围栏代码块会被遮盖，普通业务信息仍可能出现在文本中。工具部分只发结构化状态，不发原始命令、stdout、完整文件和附件。部分托管工具没有本地工具事件。退出码为零也不能证明文件内容正确，应让 Codex 执行直接核对产物的检查。
+
+可修改 `~/.yo-po/reviewer.md` 调整审查重点。`~/.yo-po/sessions/` 中按会话保存完整派工指令、审查输入和判定。接口失败时会标明本轮未验收，不会将失败记成通过。
+
+## 管理与验证
+
+```sh
+node bin/yo-po.js hook-status
+node bin/yo-po.js install-hooks
+node bin/yo-po.js uninstall-hooks
+npm test
+```
+
+`hook-status` 显示已保存的模型和 Codex 报告的启用、信任状态。安装器保留当前用户 `$CODEX_HOME/hooks.json` 中其他程序的 Hooks，运行文件位于 `~/.yo-po/runtime/`。桌面端和 CLI 使用同一配置目录时共享一次安装。更换电脑或使用独立 `CODEX_HOME` 时，在对应环境安装。升级若改变 Hook 定义，Codex 可能要求重新信任。
+
+安装 Codex CLI 后可运行 `node test/host-smoke.mjs`。它用临时配置三次启动真实 Codex。在两个项目中新开聊天，再恢复第一个聊天，验证同一份已保存的接口能自动派工、记录工具执行、退回和复审。两个模型端点均在本机模拟。独立运行可用 `node bin/yo-po.js try`，离线演示可用 `npm run demo`。[独立模式](docs/standalone.md) · [Codex Hooks](https://developers.openai.com/codex/hooks/) · [CC BY-NC 4.0 许可](LICENSE)
+
+## 贡献者
+
+- [@shiyo1843-tech](https://github.com/shiyo1843-tech)：推动审查流程接入 Codex 原会话，参与逐轮验收与返工流程设计，并测试 Windows 安装向导、接口切换和模型选择体验。
+
+此仓库版本沿用 [CC BY-NC 4.0](LICENSE)。既有 MIT 版本的版权及许可声明见 [历史许可声明](NOTICE-MIT.txt)。
+
+---
+
 ## 为什么诞生这个项目（初心与总目标）
 
 **总目标：让日常 AI 开发真正好用——至少做到指哪打哪，用着不烧心。**

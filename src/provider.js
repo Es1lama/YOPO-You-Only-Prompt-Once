@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { json, save } from './storage.js';
 import { endpoint, envConnection, formats, gemini, reviewClient } from './gemini.js';
 
-export const userDir = () => path.join(os.homedir(), '.yo-po');
+export const userDir = () => process.env.YOPO_HOME ? path.resolve(process.env.YOPO_HOME) : path.join(os.homedir(), '.yo-po');
 export const providerFile = dir => path.join(dir, 'provider.json');
 
 function dpapi(value, decrypt) {
@@ -44,13 +44,14 @@ export async function verifyAndSaveProvider(dir, config, fetchFn=fetch, signal) 
   signal?.throwIfAborted();
   storeProvider(dir,config);
 }
-export function reviewer(dir, env = process.env) {
+export function reviewer(dir, env = process.env, signal) {
+  const request=signal ? (url,opts)=>fetch(url,{...opts,signal:AbortSignal.any([opts.signal,signal])}) : fetch;
   if (!fs.existsSync(providerFile(dir))) {
     const {key,model}=envConnection(env);
     if (!model || !key) throw Error('尚未配置审查 API。打开 Yo-po.cmd 或运行 npm start。');
-    return gemini(env);
+    return gemini(env,request);
   }
   const cfg = json(providerFile(dir));
   const key = cfg.dpapi ? dpapi(cfg.dpapi,true) : cfg.apiKey;
-  return reviewClient({...cfg,key});
+  return reviewClient({...cfg,key},request);
 }

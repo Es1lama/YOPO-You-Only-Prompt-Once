@@ -11,6 +11,7 @@ import { savedProvider, reviewer, userDir } from '../src/provider.js';
 const help = [
   'Yo-po — You Only Prompt Once',
   'yo-po setup | configure-api | install-hooks | uninstall-hooks | hook-status',
+  'yo-po review-chat | review-chat-demo  (Windows)',
   'yo-po try',
   'yo-po init RUN_DIR --workspace PATH (--goal TEXT | --goal-file FILE) [--todos FILE.json] [--artifact PATH ...]',
   'yo-po run RUN_DIR [--prepare] [--rounds N]',
@@ -23,6 +24,12 @@ const help = [
 async function main(args) {
   if (!args.length || args.includes('--help')) { console.log(help); return; }
   const [command, raw, ...rest] = args;
+  if (command==='review-chat' || command==='review-chat-demo') {
+    if (raw!==undefined) throw Error(help);
+    if (command==='review-chat-demo') await (await import('../examples/review-chat-demo.js')).runReviewDemo();
+    else await (await import('../src/windows-review-chat.js')).windowsReviewChat();
+    return;
+  }
   if (['setup','configure-api'].includes(command) && raw==='--window') {
     const { windowsSetup } = await import('../src/windows-setup.js');
     await windowsSetup(command);

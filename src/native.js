@@ -7,6 +7,7 @@ import { decision, planTasks } from './loop.js';
 import { reviewer, userDir, providerFile } from './provider.js';
 import { envConnection } from './gemini.js';
 import { providerGroups } from './services.js';
+import { update, readRule } from './native-state.js';
 
 const defaultRules = new URL('../prompts/reviewer.md', import.meta.url);
 const noExternal = /闭卷|不(?:要|许|准|用|允许|得)?(?:使用|用|调用|访问)?\s*(?:任何)?(?:联网|上网|外部(?:模型|服务|接口)|第三方(?:模型|服务)|工具|外发)|禁止(?:联网|外发)|只凭.{0,8}(?:已有|现有|记忆)|只在本地(?:处理|执行)|\b(?:offline only|closed[- ]book|no (?:internet|web|network|tools|external (?:models?|services?))|(?:do not|don't) (?:go online|use (?:any )?(?:tools|external models)|access the internet))\b/i;
@@ -30,22 +31,6 @@ function common(s) {
   return { originalGoal:s.goal, userFeedback:s.feedback, plan:s.tasks, currentTask:s.tasks[s.index], previousReviews:s.history };
 }
 
-// Keep locks local to short state-file transactions. Network calls never hold them.
-function update(dir, fn) {
-  fs.mkdirSync(dir, { recursive:true, mode:0o700 });
-  const lock = path.join(dir,'state.lock'), file = path.join(dir,'active.json');
-  const until = Date.now() + 5000;
-  let fd;
-  while (fd === undefined) {
-    try { fd = fs.openSync(lock,'wx',0o600); }
-    catch (e) {
-      if (e.code !== 'EEXIST' || Date.now() >= until) throw Error('会话状态正在使用。若异常退出，请检查 ' + lock);
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,15);
-    }
-  }
-  try { return fn(fs.existsSync(file) ? json(file) : null, state => save(file,state)); }
-  finally { fs.closeSync(fd); fs.rmSync(lock,{force:true}); }
-}
 function taskDir(dir,s) { return path.join(dir,s.run); }
 function log(dir,s,kind,value) {
   const dest = taskDir(dir,s);
@@ -143,7 +128,7 @@ export async function handle(event, { home = userDir(), ask, rules } = {}) {
       }
       if (old?.submitId === turn && old?.submitHash === hash(raw)) return { output:old.submitOutput ?? {} };
       const more = old && ['running','continuing','reviewing','blocked','planning','interrupted'].includes(old.phase) && old.goal;
-      const s = { run:more ? old.run : randomUUID(), rev:randomUUID(), round:more ? old.round + 1 : 1,
+      const s = { reviewChatVersion:1, run:more ? old.run : randomUUID(), rev:randomUUID(), round:more ? old.round + 1 : 1,
         turn, submitId:turn, submitHash:hash(raw), seenTurns:more ? [...old.seenTurns,old.turn] : [],
         goal:more ? old.goal : goal, feedback:more ? [...old.feedback,goal] : [],
         history:more ? old.history : [], tasks:[], index:0, phase:'planning' };
@@ -175,15 +160,26 @@ export async function handle(event, { home = userDir(), ask, rules } = {}) {
   const answer=cleanAnswer.length>3200 ? cleanAnswer.slice(0,3200)+' [excerpt truncated]' : cleanAnswer;
   const begin=update(dir,(s,put) => {
     if (!relevant(s,event) || !['running','continuing'].includes(s.phase)) return null;
-    bind(s,event); s.rev=randomUUID(); s.phase='reviewing'; put(s); return s;
+    // A rule confirmed after this snapshot starts with the next Stop, never cancels this one.
+    let rule=null;
+    if (s.reviewChatVersion===1) {
+      try { rule=readRule(dir,s); }
+      catch {
+        s.rev=randomUUID(); s.phase='error'; put(s);
+        return {failure:warning('本任务的 review-rule.json 无法读取，本轮未验收；没有向审查端发送请求。')};
+      }
+    }
+    bind(s,event); s.rev=randomUUID(); s.phase='reviewing'; put(s); return {s,rule};
   });
   if (!begin) return {};
-  const s=begin;
+  if (begin.failure) return begin.failure;
+  const {s,rule}=begin;
   try {
     const recorded=events(dir,s);
     const rows=[...new Map(recorded.map(r=>[r.id,r])).values()];
     if (answer) rows.push({ id:'r'+s.round+':answer', type:'agentMessage', detail:answer });
     const packet={ ...common(s), sentPrompt:s.instruction, finalGoalCheck:s.index === s.tasks.length-1,
+      ...(rule?.revision ? {taskReviewRule:rule} : {}),
       instruction:'On the last item verify the whole original goal, including anything omitted from the plan. Tool status alone cannot prove file contents. For implementation work require observable evidence, not a statement of completion.',
       evidence:budgetEvidence(rows,65000) };
     log(dir,s,'review-input',packet);

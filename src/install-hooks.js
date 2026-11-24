@@ -12,7 +12,7 @@ import { terminal } from './try.js';
 
 export const eventNames = ['UserPromptSubmit','PostToolUse','Stop','Interrupt'];
 const root = fileURLToPath(new URL('../',import.meta.url));
-const sources = ['package.json','bin/codex-hook.js','src/native.js','src/provider.js','src/gemini.js',
+const sources = ['package.json','bin/codex-hook.js','src/native.js','src/native-state.js','src/provider.js','src/gemini.js',
   'src/loop.js','src/evidence.js','src/codex.js','src/storage.js','src/services.js','prompts/reviewer.md'];
 const codexDir = () => process.env.CODEX_HOME || path.join(os.homedir(),'.codex');
 function readHooks(file) {

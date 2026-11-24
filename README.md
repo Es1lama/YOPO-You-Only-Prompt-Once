@@ -84,7 +84,8 @@ npm test
 
 ## 贡献者
 
-- [@shiyo1843-tech](https://github.com/shiyo1843-tech)：推动审查流程接入 Codex 原会话，参与逐轮验收与返工流程设计，并测试 Windows 安装向导、接口切换和模型选择体验。
+- **构想与需求：** [@shiyo1843-tech](https://github.com/shiyo1843-tech) 为这版实现提出具体构想和需求：把模型审查接入原有 Codex 会话，按用户的原始目标逐轮检查执行记录，发现遗漏就把完整的返工指令发回原会话；同时提出 Windows 安装和切换审查模型的使用需求。
+- **程序实现：** 这版的主要代码由 Codex（AI）根据上述构想与需求实现。
 
 此仓库版本沿用 [CC BY-NC 4.0](LICENSE)。既有 MIT 版本的版权及许可声明见 [历史许可声明](NOTICE-MIT.txt)。
 

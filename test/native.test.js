@@ -102,7 +102,7 @@ test('long tasks automatically reach review without an activation prefix',async 
 
 test('installation targets each user, survives source relocation and preserves unrelated hook definitions on reinstall/removal',t=>{
   const dir=temp(t);
-  for (const user of ['alice','bob']) {
+  for (const user of ['alice','bob~1']) {
     const home=path.join(dir,user,'data'),codex=path.join(dir,user,'codex');
     fs.mkdirSync(codex,{recursive:true});
     const original={extra:'keep',hooks:{Stop:[{matcher:'abc',hooks:[{type:'command',command:'other program'}]}]}};
@@ -111,7 +111,17 @@ test('installation targets each user, survives source relocation and preserves u
     assert.ok(first.changed);
     assert.equal(install({home,codex}).changed,false);
     const config=JSON.parse(fs.readFileSync(first.file));
-    for (const n of eventNames) assert.ok(config.hooks[n].at(-1).hooks[0].command.includes(user));
+    const runtime=path.join(home,'runtime');
+    const [bundle]=fs.readdirSync(runtime);
+    const entry=path.join(runtime,bundle,'bin','codex-hook.js');
+    assert.ok(fs.statSync(entry).isFile());
+    for (const n of eventNames) {
+      const {command}=config.hooks[n].at(-1).hooks[0];
+      const literal=/^node "([^"]+)"$/.exec(command);
+      const encoded=/^node -e "[^"]*Buffer\.from\('([A-Za-z0-9+/=]+)','base64'\)[^"]*"$/.exec(command);
+      assert.ok(literal || encoded, 'Expected a literal or encoded hook path');
+      assert.equal(path.normalize(literal?.[1] ?? Buffer.from(encoded[1],'base64').toString()),path.normalize(entry));
+    }
     assert.deepEqual(config.hooks.Stop[0],original.hooks.Stop[0]);
     const later={hooks:[{type:'command',command:'installed after Yo-po'}]};
     config.hooks.Stop.push(later);
